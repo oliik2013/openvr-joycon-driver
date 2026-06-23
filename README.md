@@ -36,6 +36,42 @@ Restart SteamVR after installing.
 3. The driver activates automatically (configured with `"alwaysActivate": true`)
 4. Left and right Joy-Cons appear as tracked controllers
 
+## Controller Mapping
+
+**Right JoyCon** maps to the right virtual controller:
+
+| JoyCon Button | VR Input | Typical Use |
+|---------------|----------|-------------|
+| A | `/input/a/click` | A button |
+| B | `/input/b/click` | B button |
+| X | `/input/x/click` | X button |
+| Y | `/input/y/click` | Y button |
+| R | `/input/shoulder_right/click` | Right bumper |
+| ZR | `/input/trigger_right/click` | Right trigger |
+| SL | `/input/grip/click` | Grip (click) |
+| SR | `/input/grip/touch` | Grip (touch) |
+| + | `/input/start/click` | Start / Menu |
+| Home (circle) | `/input/guide/click` | System / Guide |
+| Stick click | `/input/joystick_right/click` | Right stick press |
+| Stick move | `/input/joystick_right/{x,y}` | Right stick X/Y |
+
+**Left JoyCon** maps to the left virtual controller:
+
+| JoyCon Button | VR Input | Typical Use |
+|---------------|----------|-------------|
+| D-pad Up | `/input/dpad/up` | D-pad up |
+| D-pad Down | `/input/dpad/down` | D-pad down |
+| D-pad Left | `/input/dpad/left` | D-pad left |
+| D-pad Right | `/input/dpad/right` | D-pad right |
+| L | `/input/shoulder_left/click` | Left bumper |
+| ZL | `/input/trigger_left/click` | Left trigger |
+| SL | `/input/grip/click` | Grip (click) |
+| SR | `/input/grip/touch` | Grip (touch) |
+| - | `/input/back/click` | Back |
+| Capture (square) | `/input/capture/click` | Capture / screenshot |
+| Stick click | `/input/joystick_left/click` | Left stick press |
+| Stick move | `/input/joystick_left/{x,y}` | Left stick X/Y |
+
 ## Uninstalling
 
 ```bash
