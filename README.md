@@ -36,6 +36,8 @@ Restart SteamVR after installing.
 3. The driver activates automatically (configured with `"alwaysActivate": true`)
 4. Left and right Joy-Cons appear as tracked controllers
 
+This driver also works with combined Joy-Cons (left + right paired together, e.g. in a grip/mount). Simply connect both via Bluetooth and each will be picked up as a separate tracked controller.
+
 ## Controller Mapping
 
 **Right JoyCon** maps to the right virtual controller:
