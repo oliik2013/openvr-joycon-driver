@@ -1,5 +1,9 @@
 #include "driverlog.h"
 #include "jsl_glue.h"
+#include "joycon_driver.h"
+
+void poll(int deviceId, JOY_SHOCK_STATE state, JOY_SHOCK_STATE prev_state, IMU_STATE imu_state, IMU_STATE prev_imu_state, float dt);
+void poll_null(int deviceId, JOY_SHOCK_STATE state, JOY_SHOCK_STATE prev_state, IMU_STATE imu_state, IMU_STATE prev_imu_state, float dt);
 
 JSLGlue JSLGlue::instance;
 
@@ -7,9 +11,16 @@ JSLGlue::JSLGlue()
 {
     isLeftConnected = false;
     isRightConnected = false;
+    leftDriver = nullptr;
+    rightDriver = nullptr;
+}
 
-    onLeftUpdate = [this](JOY_SHOCK_STATE state, IMU_STATE imu) {};
-    onRightUpdate = [this](JOY_SHOCK_STATE state, IMU_STATE imu) {};
+void JSLGlue::setDriver(bool isRight, JoyconDriver *driver)
+{
+    if (isRight)
+        rightDriver = driver;
+    else
+        leftDriver = driver;
 }
 
 void JSLGlue::init()
@@ -65,12 +76,17 @@ void JSLGlue::disable_callback()
     JslSetCallback(poll_null);
 }
 
-void poll(int deviceId, JOY_SHOCK_STATE state, JOY_SHOCK_STATE prev_state, IMU_STATE imu_state, IMU_STATE prev_imu_state, float dt) {
-    if (JSLGlue::instance.isLeftConnected && deviceId == JSLGlue::instance.leftHandle) {
-        JSLGlue::instance.onLeftUpdate(state, imu_state);
+void poll(int deviceId, JOY_SHOCK_STATE state, JOY_SHOCK_STATE prev_state, IMU_STATE imu_state, IMU_STATE prev_imu_state, float dt)
+{
+    if (JSLGlue::instance.isLeftConnected && deviceId == JSLGlue::instance.leftHandle)
+    {
+        if (JSLGlue::instance.leftDriver)
+            JSLGlue::instance.leftDriver->processInput(state, imu_state, dt);
     }
-    else if (JSLGlue::instance.isRightConnected && deviceId == JSLGlue::instance.rightHandle) {
-        JSLGlue::instance.onRightUpdate(state, imu_state);
+    else if (JSLGlue::instance.isRightConnected && deviceId == JSLGlue::instance.rightHandle)
+    {
+        if (JSLGlue::instance.rightDriver)
+            JSLGlue::instance.rightDriver->processInput(state, imu_state, dt);
     }
 }
 

@@ -3,8 +3,13 @@
 
 #include "provider.h"
 
+#if defined(_WIN32)
 #define HMD_DLL_EXPORT extern "C" __declspec(dllexport)
 #define HMD_DLL_IMPORT extern "C" __declspec(dllimport)
+#else
+#define HMD_DLL_EXPORT extern "C" __attribute__((visibility("default")))
+#define HMD_DLL_IMPORT extern "C"
+#endif
 
 Provider g_provider;
 

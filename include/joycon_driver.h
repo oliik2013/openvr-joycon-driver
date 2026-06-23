@@ -4,21 +4,7 @@
 #include <openvr_driver.h>
 #include <string>
 
-struct InputManager
-{
-    vr::VRInputComponentHandle_t up, down, left, right;
-    vr::VRInputComponentHandle_t plus, minus;
-    vr::VRInputComponentHandle_t lstick_click, rstick_click;
-    vr::VRInputComponentHandle_t l, r, zl, zr, sl, sr;
-    vr::VRInputComponentHandle_t a, b, x, y;
-    vr::VRInputComponentHandle_t home, capture;
-
-    vr::VRInputComponentHandle_t lstick_x, lstick_y;
-    vr::VRInputComponentHandle_t rstick_x, rstick_y;
-
-    InputManager(vr::PropertyContainerHandle_t container, vr::ETrackedControllerRole role);
-    void registerCallback(vr::ETrackedControllerRole role);
-};
+#include <JSL/JoyShockLibrary.h>
 
 class JoyconDriver : public vr::ITrackedDeviceServerDriver
 {
@@ -34,14 +20,12 @@ public:
     virtual void DebugRequest(const char *pchRequest, char *pchResponseBuffer, uint32_t unResponseBufferSize);
     virtual vr::DriverPose_t GetPose();
 
-    void RegisterCallback();
-
     void RunFrame();
     void ProcessEvent(const vr::VREvent_t &vrEvent);
     void *GetComponent(const char *pchComponentNameAndVersion);
     std::string GetSerialNumber() const { return m_serialNumber; }
 
-    InputManager *m_inputManager;
+    void processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt);
 
 private:
     vr::TrackedDeviceIndex_t m_controllerId;
@@ -50,6 +34,16 @@ private:
 
     vr::DriverPose_t m_pose;
     std::string m_serialNumber;
+
+    vr::VRInputComponentHandle_t m_compA, m_compB, m_compX, m_compY;
+    vr::VRInputComponentHandle_t m_compUp, m_compDown, m_compLeft, m_compRight;
+    vr::VRInputComponentHandle_t m_compPlus, m_compMinus;
+    vr::VRInputComponentHandle_t m_compL, m_compR, m_compZL, m_compZR;
+    vr::VRInputComponentHandle_t m_compSL, m_compSR;
+    vr::VRInputComponentHandle_t m_compHome, m_compCapture;
+    vr::VRInputComponentHandle_t m_compLStickClick, m_compRStickClick;
+    vr::VRInputComponentHandle_t m_compLStickX, m_compLStickY;
+    vr::VRInputComponentHandle_t m_compRStickX, m_compRStickY;
 
     int m_jslHandle;
 };

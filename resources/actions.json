@@ -1,0 +1,130 @@
+{
+   "actions": [
+      {
+         "name": "/actions/joycon/in/pose_left",
+         "type": "pose",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/pose_right",
+         "type": "pose",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/joystick_left",
+         "type": "vector2",
+         "requirement": "mandatory"
+      },
+      {
+         "name": "/actions/joycon/in/joystick_right",
+         "type": "vector2",
+         "requirement": "mandatory"
+      },
+      {
+         "name": "/actions/joycon/in/a",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/b",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/x",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/y",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/dpad_up",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/dpad_down",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/dpad_left",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/dpad_right",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/l",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/r",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/zl",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/zr",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/sl",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/sr",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/minus",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/plus",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/home",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/capture",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/lstick_click",
+         "type": "boolean",
+         "requirement": "optional"
+      },
+      {
+         "name": "/actions/joycon/in/rstick_click",
+         "type": "boolean",
+         "requirement": "optional"
+      }
+   ],
+   "localization": [
+      {
+         "language_tag": "en_US",
+         "/actions/joycon": "JoyCon"
+      }
+   ]
+}

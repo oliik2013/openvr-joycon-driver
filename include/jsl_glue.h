@@ -4,6 +4,8 @@
 #include <functional>
 #include <JSL/JoyShockLibrary.h>
 
+class JoyconDriver;
+
 class JSLGlue
 {
 public:
@@ -15,9 +17,13 @@ public:
     void enable_callback();
     void disable_callback();
 
+    void setDriver(bool isRight, JoyconDriver *driver);
+
     bool isLeftConnected, isRightConnected;
     int leftHandle, rightHandle;
-    std::function<void(JOY_SHOCK_STATE, IMU_STATE)> onLeftUpdate, onRightUpdate;
+
+    JoyconDriver *leftDriver;
+    JoyconDriver *rightDriver;
 
 public:
     static JSLGlue instance;
