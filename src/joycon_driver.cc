@@ -176,18 +176,6 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
         quatMul(m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z,
                 m_rawQuat.w, m_rawQuat.x, m_rawQuat.y, m_rawQuat.z,
                 m_pose.qRotation.w, m_pose.qRotation.x, m_pose.qRotation.y, m_pose.qRotation.z);
-
-        static int logSkip = 0;
-        if (++logSkip % 100 == 0)
-            DriverLog("IMU q=[%.3f,%.3f,%.3f,%.3f] raw=[%.3f,%.3f,%.3f,%.3f]",
-                qw, qx, qy, qz,
-                m_rawQuat.w, m_rawQuat.x, m_rawQuat.y, m_rawQuat.z);
-    }
-    else
-    {
-        static int logSkip = 0;
-        if (++logSkip % 100 == 0)
-            DriverLog("IMU handle invalid (handle=%d)", m_jslHandle);
     }
 
     int recenterBtn = isRight ? JSMASK_PLUS : JSMASK_MINUS;
@@ -305,11 +293,6 @@ void JoyconDriver::RunFrame()
         m_pose.vecPosition[1] = hmdY + armWorld[1] + m_frozenRel[1];
         m_pose.vecPosition[2] = hmdZ + armWorld[2] + m_frozenRel[2];
     }
-
-    { static int n = 0; if (++n % 200 == 0)
-        DriverLog("SendPose rot=[%.2f,%.2f,%.2f,%.2f] pos=[%.2f,%.2f,%.2f]",
-            m_pose.qRotation.w, m_pose.qRotation.x, m_pose.qRotation.y, m_pose.qRotation.z,
-            m_pose.vecPosition[0], m_pose.vecPosition[1], m_pose.vecPosition[2]); }
 
     vr::VRServerDriverHost()->TrackedDevicePoseUpdated(m_controllerId, GetPose(), sizeof(vr::DriverPose_t));
 }
