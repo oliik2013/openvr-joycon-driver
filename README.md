@@ -38,41 +38,47 @@ Restart SteamVR after installing.
 
 This driver also works with combined Joy-Cons (left + right paired together, e.g. in a grip/mount). Simply connect both via Bluetooth, then press **L + R** (or **ZL + ZR**) on both controllers at the same time to combine them. Each JoyCon will be picked up as a separate tracked controller.
 
+The driver presents as a **Vive controller** (`vive_controller`) so most SteamVR games work out of the box without manual binding setup. Generic gamepad-style buttons (A/B/X/Y, D-pad, L/R) are not mapped, but all essential VR inputs work.
+
 ## Controller Mapping
 
 **Right JoyCon** maps to the right virtual controller:
 
 | JoyCon Button | VR Input | Typical Use |
 |---------------|----------|-------------|
-| A | `/input/a/click` | A button |
-| B | `/input/b/click` | B button |
-| X | `/input/x/click` | X button |
-| Y | `/input/y/click` | Y button |
-| R | `/input/shoulder_right/click` | Right bumper |
-| ZR | `/input/trigger_right/click` | Right trigger |
-| SL | `/input/grip/click` | Grip (click) |
-| SR | `/input/grip/touch` | Grip (touch) |
-| + | `/input/start/click` | Start / Menu |
-| Home (circle) | `/input/guide/click` | System / Guide |
-| Stick click | `/input/joystick_right/click` | Right stick press |
-| Stick move | `/input/joystick_right/{x,y}` | Right stick X/Y |
+| ZR | `/input/trigger/click` | Trigger (fire, grab, interact) |
+| SL | `/input/grip/click` | Grip (grab) |
+| SR | `/input/grip/touch` | Grip touch detect |
+| + (Start) | `/input/system/click` | System / Steam menu |
+| Home (circle) | `/input/application_menu/click` | Game menu |
+| Stick move | `/input/trackpad/{x,y}` | Trackpad (movement/teleport) |
+| Stick click | `/input/trackpad/click` | Trackpad press (sprint/confirm) |
 
 **Left JoyCon** maps to the left virtual controller:
 
 | JoyCon Button | VR Input | Typical Use |
 |---------------|----------|-------------|
-| D-pad Up | `/input/dpad/up` | D-pad up |
-| D-pad Down | `/input/dpad/down` | D-pad down |
-| D-pad Left | `/input/dpad/left` | D-pad left |
-| D-pad Right | `/input/dpad/right` | D-pad right |
-| L | `/input/shoulder_left/click` | Left bumper |
-| ZL | `/input/trigger_left/click` | Left trigger |
-| SL | `/input/grip/click` | Grip (click) |
-| SR | `/input/grip/touch` | Grip (touch) |
-| - | `/input/back/click` | Back |
-| Capture (square) | `/input/capture/click` | Capture / screenshot |
-| Stick click | `/input/joystick_left/click` | Left stick press |
-| Stick move | `/input/joystick_left/{x,y}` | Left stick X/Y |
+| ZL | `/input/trigger/click` | Trigger (fire, grab, interact) |
+| SL | `/input/grip/click` | Grip (grab) |
+| SR | `/input/grip/touch` | Grip touch detect |
+| - (Minus) | `/input/system/click` | System / Steam menu |
+| Capture (square) | `/input/application_menu/click` | Game menu |
+| Stick move | `/input/trackpad/{x,y}` | Trackpad (movement/teleport) |
+| Stick click | `/input/trackpad/click` | Trackpad press (sprint/confirm) |
+
+## Recenter
+
+Hold **+** on the right JoyCon or **-** on the left JoyCon for 0.5 seconds to recenter. This aligns the controller's forward direction with where you're currently looking (HMD forward) and freezes the arm-swing position to prevent jumping.
+
+**Note:** A short press of **+**/**-** opens the SteamVR system menu (prevents conflict between recenter and menu).
+
+## Features
+
+- **IMU-based 6-DOF tracking**: Uses JoyShockLibrary's sensor fusion for orientation
+- **Arm-swing position model**: Controller position swings with your arm rotation around the HMD (GearVR-style 3-DOF positional illusion)
+- **Haptic feedback**: Vibration/rumble works in compatible games via `/output/haptic`
+- **Auto-calibration**: Gyro is continuously calibrated to reduce drift
+- **Vive controller compatibility**: Appears as `vive_controller` so existing SteamVR bindings work without manual setup
 
 ## Uninstalling
 

@@ -35,17 +35,22 @@ private:
     vr::DriverPose_t m_pose;
     std::string m_serialNumber;
 
-    vr::VRInputComponentHandle_t m_compA, m_compB, m_compX, m_compY;
-    vr::VRInputComponentHandle_t m_compUp, m_compDown, m_compLeft, m_compRight;
-    vr::VRInputComponentHandle_t m_compPlus, m_compMinus;
-    vr::VRInputComponentHandle_t m_compL, m_compR, m_compZL, m_compZR;
-    vr::VRInputComponentHandle_t m_compSL, m_compSR;
-    vr::VRInputComponentHandle_t m_compHome, m_compCapture;
-    vr::VRInputComponentHandle_t m_compLStickClick, m_compRStickClick;
-    vr::VRInputComponentHandle_t m_compLStickX, m_compLStickY;
-    vr::VRInputComponentHandle_t m_compRStickX, m_compRStickY;
+    vr::VRInputComponentHandle_t m_compSystem;
+    vr::VRInputComponentHandle_t m_compAppMenu;
+    vr::VRInputComponentHandle_t m_compGrip, m_compGripTouch;
+    vr::VRInputComponentHandle_t m_compTrigger;
+    vr::VRInputComponentHandle_t m_compTrackpadX, m_compTrackpadY;
+    vr::VRInputComponentHandle_t m_compTrackpadClick;
 
     int m_jslHandle;
+    int m_prevButtons;
+    float m_frozenRel[3];
+    vr::HmdQuaternion_t m_qOffset;
+    vr::HmdQuaternion_t m_rawQuat;
+    bool m_systemSuppressed;
+    double m_systemHoldStart;
+    vr::VRInputComponentHandle_t m_compHaptic;
+    double m_rumbleEndTime;
 };
 
 #endif
