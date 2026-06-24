@@ -265,10 +265,25 @@ void JoyconDriver::RunFrame()
     vr::TrackedDevicePose_t &hmdPose = poses[vr::k_unTrackedDeviceIndex_Hmd];
     if (hmdPose.bPoseIsValid && hmdPose.bDeviceIsConnected)
     {
+        float hmdX = hmdPose.mDeviceToAbsoluteTracking.m[0][3];
+        float hmdY = hmdPose.mDeviceToAbsoluteTracking.m[1][3];
+        float hmdZ = hmdPose.mDeviceToAbsoluteTracking.m[2][3];
+
+        float qw = m_pose.qRotation.w;
+        float qx = m_pose.qRotation.x;
+        float qy = m_pose.qRotation.y;
+        float qz = m_pose.qRotation.z;
+
+        float yaw = atan2f(2.0f * (qw * qz + qx * qy),
+                           1.0f - 2.0f * (qy * qy + qz * qz));
+
         float side = (m_controllerRole == vr::TrackedControllerRole_RightHand) ? 0.3f : -0.3f;
-        m_pose.vecPosition[0] = hmdPose.mDeviceToAbsoluteTracking.m[0][3] + side;
-        m_pose.vecPosition[1] = hmdPose.mDeviceToAbsoluteTracking.m[1][3] - 0.2f;
-        m_pose.vecPosition[2] = hmdPose.mDeviceToAbsoluteTracking.m[2][3] - 0.4f;
+        float cosYaw = cosf(yaw);
+        float sinYaw = sinf(yaw);
+
+        m_pose.vecPosition[0] = hmdX + side * cosYaw - 0.4f * sinYaw;
+        m_pose.vecPosition[1] = hmdY - 0.2f;
+        m_pose.vecPosition[2] = hmdZ + side * sinYaw + 0.4f * cosYaw;
     }
 
     vr::VRServerDriverHost()->TrackedDevicePoseUpdated(m_controllerId, GetPose(), sizeof(vr::DriverPose_t));
