@@ -244,11 +244,20 @@ void JoyconDriver::RunFrame()
         vr::TrackedDevicePose_t &hmd = poses[vr::k_unTrackedDeviceIndex_Hmd];
         if (hmd.bPoseIsValid)
         {
-            std::lock_guard<std::mutex> lock(m_quatMutex);
-            m_qOffset.w = 1;
-            m_qOffset.x = 0;
-            m_qOffset.y = 0;
-            m_qOffset.z = 0;
+            float hmdQw, hmdQx, hmdQy, hmdQz;
+            matrixToQuat(hmd.mDeviceToAbsoluteTracking.m, hmdQw, hmdQx, hmdQy, hmdQz);
+
+            float hmdYaw = atan2f(2.0f * (hmdQw * hmdQz + hmdQx * hmdQy),
+                                   1.0f - 2.0f * (hmdQy * hmdQy + hmdQz * hmdQz));
+            float halfYaw = hmdYaw * 0.5f;
+            float yawQw = cosf(halfYaw), yawQy = sinf(halfYaw);
+
+            {
+                std::lock_guard<std::mutex> lock(m_quatMutex);
+                quatMul(yawQw, 0, yawQy, 0,
+                        m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
+                        m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
+            }
         }
     }
 
