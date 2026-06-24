@@ -168,10 +168,13 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
             qw /= n; qx /= n; qy /= n; qz /= n;
         }
 
-        m_rawQuat.w = qw;
-        m_rawQuat.x = -qx;
-        m_rawQuat.y = qy;
-        m_rawQuat.z = -qz;
+        {
+            std::lock_guard<std::mutex> lock(m_quatMutex);
+            m_rawQuat.w = qw;
+            m_rawQuat.x = -qx;
+            m_rawQuat.y = qy;
+            m_rawQuat.z = -qz;
+        }
     }
 
     int recenterBtn = isRight ? JSMASK_PLUS : JSMASK_MINUS;
@@ -205,9 +208,12 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
                 float halfYaw = hmdYaw * 0.5f;
                 float yawQw = cosf(halfYaw), yawQy = sinf(halfYaw);
 
-                quatMul(yawQw, 0, yawQy, 0,
-                        m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
-                        m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
+                {
+                    std::lock_guard<std::mutex> lock(m_quatMutex);
+                    quatMul(yawQw, 0, yawQy, 0,
+                            m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
+                            m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
+                }
 
                 m_frozenRel[0] = m_frozenRel[1] = m_frozenRel[2] = 0.0f;
             }
@@ -252,9 +258,12 @@ void JoyconDriver::RunFrame()
     vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
     vr::VRServerDriverHost()->GetRawTrackedDevicePoses(0.0f, poses, vr::k_unMaxTrackedDeviceCount);
 
-    quatMul(m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z,
-            m_rawQuat.w, m_rawQuat.x, m_rawQuat.y, m_rawQuat.z,
-            m_pose.qRotation.w, m_pose.qRotation.x, m_pose.qRotation.y, m_pose.qRotation.z);
+    {
+        std::lock_guard<std::mutex> lock(m_quatMutex);
+        quatMul(m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z,
+                m_rawQuat.w, m_rawQuat.x, m_rawQuat.y, m_rawQuat.z,
+                m_pose.qRotation.w, m_pose.qRotation.x, m_pose.qRotation.y, m_pose.qRotation.z);
+    }
 
     vr::TrackedDevicePose_t &hmdPose = poses[vr::k_unTrackedDeviceIndex_Hmd];
     if (hmdPose.bPoseIsValid && hmdPose.bDeviceIsConnected)

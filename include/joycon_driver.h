@@ -3,6 +3,7 @@
 
 #include <openvr_driver.h>
 #include <string>
+#include <mutex>
 
 #include <JSL/JoyShockLibrary.h>
 
@@ -51,6 +52,7 @@ private:
     double m_systemHoldStart;
     vr::VRInputComponentHandle_t m_compHaptic;
     double m_rumbleEndTime;
+    mutable std::mutex m_quatMutex;
 };
 
 #endif
