@@ -45,10 +45,12 @@ private:
 
     int m_jslHandle;
     int m_prevButtons;
+    float m_frozenRel[3];
     vr::HmdQuaternion_t m_qOffset;
     vr::HmdQuaternion_t m_rawQuat;
     bool m_systemSuppressed;
     double m_systemHoldStart;
+    bool m_pendingRecenter;
     vr::VRInputComponentHandle_t m_compHaptic;
     double m_rumbleEndTime;
     mutable std::mutex m_quatMutex;

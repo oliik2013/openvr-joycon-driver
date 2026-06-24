@@ -19,6 +19,7 @@ JoyconDriver::JoyconDriver(
     m_rawQuat{1, 0, 0, 0},
     m_systemSuppressed(false),
     m_systemHoldStart(0),
+    m_pendingRecenter(false),
     m_rumbleEndTime(0)
 {
 }
@@ -194,29 +195,8 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
         if (now - m_systemHoldStart >= 0.5)
         {
             m_systemSuppressed = true;
-
-            vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
-            vr::VRServerDriverHost()->GetRawTrackedDevicePoses(0, poses, vr::k_unMaxTrackedDeviceCount);
-            vr::TrackedDevicePose_t &hmd = poses[vr::k_unTrackedDeviceIndex_Hmd];
-            if (hmd.bPoseIsValid)
-            {
-                float hmdQw, hmdQx, hmdQy, hmdQz;
-                matrixToQuat(hmd.mDeviceToAbsoluteTracking.m, hmdQw, hmdQx, hmdQy, hmdQz);
-
-                float hmdYaw = atan2f(2.0f * (hmdQw * hmdQz + hmdQx * hmdQy),
-                                       1.0f - 2.0f * (hmdQy * hmdQy + hmdQz * hmdQz));
-                float halfYaw = hmdYaw * 0.5f;
-                float yawQw = cosf(halfYaw), yawQy = sinf(halfYaw);
-
-                {
-                    std::lock_guard<std::mutex> lock(m_quatMutex);
-                    quatMul(yawQw, 0, yawQy, 0,
-                            m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
-                            m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
-                }
-
-                m_frozenRel[0] = m_frozenRel[1] = m_frozenRel[2] = 0.0f;
-            }
+            m_pendingRecenter = true;
+            m_frozenRel[0] = m_frozenRel[1] = m_frozenRel[2] = 0.0f;
         }
     }
 
@@ -257,6 +237,29 @@ void JoyconDriver::RunFrame()
 
     vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
     vr::VRServerDriverHost()->GetRawTrackedDevicePoses(0.0f, poses, vr::k_unMaxTrackedDeviceCount);
+
+    if (m_pendingRecenter)
+    {
+        m_pendingRecenter = false;
+        vr::TrackedDevicePose_t &hmd = poses[vr::k_unTrackedDeviceIndex_Hmd];
+        if (hmd.bPoseIsValid)
+        {
+            float hmdQw, hmdQx, hmdQy, hmdQz;
+            matrixToQuat(hmd.mDeviceToAbsoluteTracking.m, hmdQw, hmdQx, hmdQy, hmdQz);
+
+            float hmdYaw = atan2f(2.0f * (hmdQw * hmdQz + hmdQx * hmdQy),
+                                   1.0f - 2.0f * (hmdQy * hmdQy + hmdQz * hmdQz));
+            float halfYaw = hmdYaw * 0.5f;
+            float yawQw = cosf(halfYaw), yawQy = sinf(halfYaw);
+
+            {
+                std::lock_guard<std::mutex> lock(m_quatMutex);
+                quatMul(yawQw, 0, yawQy, 0,
+                        m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
+                        m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
+            }
+        }
+    }
 
     {
         std::lock_guard<std::mutex> lock(m_quatMutex);
