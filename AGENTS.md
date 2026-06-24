@@ -30,7 +30,7 @@ Only qx is negated (`m_rawQuat = {-qx, qy, qz}`) — the raw JSL quaternion need
 
 ## Recenter
 
-Hold `+` (right) or `-` (left) for 0.5s. Sets `qOffset = yawQ * conj(m_rawQuat)` in `processInput` (JSL thread), zeros `m_frozenRel`. The HMD yaw is extracted from `GetRawTrackedDevicePoses`.
+Hold `+` (right) or `-` (left) for 0.5s. Sets a flag in `processInput` (JSL thread); the actual recenter (`qOffset = yawQ * conj(m_rawQuat)`) runs in `RunFrame` on the SteamVR thread where the HMD pose is fresh. Zeros `m_frozenRel`.
 
 ## Arm-Swing Position
 
