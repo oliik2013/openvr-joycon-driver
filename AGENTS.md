@@ -22,11 +22,11 @@ No tests, no lint, no typecheck.
 
 - **JSL callback thread** (`poll` → `processInput`): reads IMU from JSL, maps buttons, handles recenter timer, writes `m_rawQuat`
 - **SteamVR thread** (`RunFrame`): computes `qRotation = qOffset * m_rawQuat` via `quatMul`, runs arm-swing position model, submits pose
-- No locks — `m_rawQuat` is a single quaternion write per frame, and `RunFrame` is the sole writer of `m_pose.qRotation`
+- A `std::mutex` protects `m_rawQuat` and `m_qOffset` since they are written by one thread and read by the other. `RunFrame` is the sole writer of `m_pose.qRotation`.
 
 ## IMU Sign Convention (Important)
 
-Both controllers negate x and z of the raw JSL quaternion. Applied in `processInput` when storing `m_rawQuat`.
+No IMU sign fix is applied — the raw JSL quaternion is used directly (`m_rawQuat = {qw, qx, qy, qz}`) in `processInput`.
 
 ## Recenter
 
