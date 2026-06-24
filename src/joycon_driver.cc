@@ -277,13 +277,13 @@ void JoyconDriver::RunFrame()
         float yaw = atan2f(2.0f * (qw * qz + qx * qy),
                            1.0f - 2.0f * (qy * qy + qz * qz));
 
-        float side = (m_controllerRole == vr::TrackedControllerRole_RightHand) ? 0.3f : -0.3f;
-        float cosYaw = cosf(yaw);
+        float side = (m_controllerRole == vr::TrackedControllerRole_RightHand) ? 0.15f : -0.15f;
         float sinYaw = sinf(yaw);
+        float cosYaw = cosf(yaw);
 
-        m_pose.vecPosition[0] = hmdX + side * cosYaw - 0.4f * sinYaw;
+        m_pose.vecPosition[0] = hmdX + 0.3f * sinYaw + side;
         m_pose.vecPosition[1] = hmdY - 0.2f;
-        m_pose.vecPosition[2] = hmdZ + side * sinYaw + 0.4f * cosYaw;
+        m_pose.vecPosition[2] = hmdZ + 0.3f * cosYaw - 0.2f;
     }
 
     vr::VRServerDriverHost()->TrackedDevicePoseUpdated(m_controllerId, GetPose(), sizeof(vr::DriverPose_t));
