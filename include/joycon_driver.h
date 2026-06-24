@@ -45,7 +45,6 @@ private:
 
     int m_jslHandle;
     int m_prevButtons;
-    float m_frozenRel[3];
     vr::HmdQuaternion_t m_qOffset;
     vr::HmdQuaternion_t m_rawQuat;
     bool m_systemSuppressed;
