@@ -26,15 +26,15 @@ No tests, no lint, no typecheck.
 
 ## IMU Sign Convention (Important)
 
-No IMU sign fix is applied — the raw JSL quaternion is used directly (`m_rawQuat = {qw, qx, qy, qz}`) in `processInput`.
+Only qx is negated (`m_rawQuat = {-qx, qy, qz}`) — the raw JSL quaternion needs pitch inverted. Applied in `processInput`.
 
 ## Recenter
 
 Hold `+` (right) or `-` (left) for 0.5s. Sets `qOffset = yawQ * conj(m_rawQuat)` in `processInput` (JSL thread), zeros `m_frozenRel`. The HMD yaw is extracted from `GetRawTrackedDevicePoses`.
 
-## Static Position (No Arm-Swing)
+## Arm-Swing Position
 
-Position is a fixed world-space offset from the HMD: `{±0.3, -0.2, -0.4}` (± right/left). No rotation-based position movement. Computed each frame in `RunFrame`.
+`position = hmdPos + rotate(armLocal, qRotation)` where `armLocal = {±0.3, -0.3, -0.5}` (+ right, - left). Computed each frame in `RunFrame`.
 
 ## Input Map
 

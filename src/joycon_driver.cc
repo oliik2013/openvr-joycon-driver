@@ -14,6 +14,7 @@ JoyconDriver::JoyconDriver(
     m_serialNumber(serialNumber),
     m_jslHandle(-1),
     m_prevButtons(0),
+    m_frozenRel{0, 0, 0},
     m_qOffset{1, 0, 0, 0},
     m_rawQuat{1, 0, 0, 0},
     m_systemSuppressed(false),
@@ -170,7 +171,7 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
         {
             std::lock_guard<std::mutex> lock(m_quatMutex);
             m_rawQuat.w = qw;
-            m_rawQuat.x = qx;
+            m_rawQuat.x = -qx;
             m_rawQuat.y = qy;
             m_rawQuat.z = qz;
         }
@@ -213,6 +214,8 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
                             m_rawQuat.w, -m_rawQuat.x, -m_rawQuat.y, -m_rawQuat.z,
                             m_qOffset.w, m_qOffset.x, m_qOffset.y, m_qOffset.z);
                 }
+
+                m_frozenRel[0] = m_frozenRel[1] = m_frozenRel[2] = 0.0f;
             }
         }
     }
@@ -269,21 +272,31 @@ void JoyconDriver::RunFrame()
         float hmdY = hmdPose.mDeviceToAbsoluteTracking.m[1][3];
         float hmdZ = hmdPose.mDeviceToAbsoluteTracking.m[2][3];
 
-        float qw = m_pose.qRotation.w;
-        float qx = m_pose.qRotation.x;
-        float qy = m_pose.qRotation.y;
-        float qz = m_pose.qRotation.z;
+        float side = (m_controllerRole == vr::TrackedControllerRole_RightHand) ? 0.3f : -0.3f;
+        float armLocal[3] = { side, -0.3f, -0.5f };
 
-        float yaw = atan2f(2.0f * (qw * qz + qx * qy),
-                           1.0f - 2.0f * (qy * qy + qz * qz));
+        float n = m_pose.qRotation.w * m_pose.qRotation.w
+                + m_pose.qRotation.x * m_pose.qRotation.x
+                + m_pose.qRotation.y * m_pose.qRotation.y
+                + m_pose.qRotation.z * m_pose.qRotation.z;
+        if (n > 0.0f) { n = 1.0f / sqrtf(n); }
+        float cqw = m_pose.qRotation.w * n;
+        float cqx = m_pose.qRotation.x * n;
+        float cqy = m_pose.qRotation.y * n;
+        float cqz = m_pose.qRotation.z * n;
 
-        float side = (m_controllerRole == vr::TrackedControllerRole_RightHand) ? 0.15f : -0.15f;
-        float sinYaw = sinf(yaw);
-        float cosYaw = cosf(yaw);
+        float armWorld[3];
+        float ix = cqw * armLocal[0] + cqy * armLocal[2] - cqz * armLocal[1];
+        float iy = cqw * armLocal[1] + cqz * armLocal[0] - cqx * armLocal[2];
+        float iz = cqw * armLocal[2] + cqx * armLocal[1] - cqy * armLocal[0];
+        float iw = -cqx * armLocal[0] - cqy * armLocal[1] - cqz * armLocal[2];
+        armWorld[0] = ix * cqw + iw * -cqx + iy * -cqz - iz * -cqy;
+        armWorld[1] = iy * cqw + iw * -cqy + iz * -cqx - ix * -cqz;
+        armWorld[2] = iz * cqw + iw * -cqz + ix * -cqy - iy * -cqx;
 
-        m_pose.vecPosition[0] = hmdX + 0.3f * sinYaw + side;
-        m_pose.vecPosition[1] = hmdY - 0.2f;
-        m_pose.vecPosition[2] = hmdZ + 0.3f * cosYaw - 0.2f;
+        m_pose.vecPosition[0] = hmdX + armWorld[0] + m_frozenRel[0];
+        m_pose.vecPosition[1] = hmdY + armWorld[1] + m_frozenRel[1];
+        m_pose.vecPosition[2] = hmdZ + armWorld[2] + m_frozenRel[2];
     }
 
     vr::VRServerDriverHost()->TrackedDevicePoseUpdated(m_controllerId, GetPose(), sizeof(vr::DriverPose_t));
