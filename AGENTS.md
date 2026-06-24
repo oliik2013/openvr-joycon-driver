@@ -26,7 +26,7 @@ No tests, no lint, no typecheck.
 
 ## IMU Sign Convention (Important)
 
-Both controllers use the same sign fix on raw JSL quaternion: `{-qx, qy, -qz}` (negate x and z). This is applied in `processInput` when storing `m_rawQuat`.
+Both controllers negate x and z of the raw JSL quaternion. Left also negates y to account for the physical mirror: `m_rawQuat.y = isRight ? qy : -qy`. Applied in `processInput`.
 
 ## Recenter
 

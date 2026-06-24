@@ -172,7 +172,7 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
             std::lock_guard<std::mutex> lock(m_quatMutex);
             m_rawQuat.w = qw;
             m_rawQuat.x = -qx;
-            m_rawQuat.y = qy;
+            m_rawQuat.y = isRight ? qy : -qy;
             m_rawQuat.z = -qz;
         }
     }
