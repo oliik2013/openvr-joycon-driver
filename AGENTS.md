@@ -26,7 +26,7 @@ No tests, no lint, no typecheck.
 
 ## IMU Sign Convention (Important)
 
-Both controllers negate x and z of the raw JSL quaternion. Left also negates y to account for the physical mirror: `m_rawQuat.y = isRight ? qy : -qy`. Applied in `processInput`.
+Both controllers negate x and z of the raw JSL quaternion. Applied in `processInput` when storing `m_rawQuat`.
 
 ## Recenter
 
