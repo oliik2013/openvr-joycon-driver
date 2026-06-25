@@ -20,7 +20,8 @@ JoyconDriver::JoyconDriver(
     m_systemSuppressed(false),
     m_systemHoldStart(0),
     m_pendingRecenter(false),
-    m_rumbleEndTime(0)
+    m_rumbleEndTime(0),
+    m_recenterHmdPos{0, 0, 0}
 {
 }
 
@@ -28,7 +29,7 @@ JoyconDriver::~JoyconDriver()
 {
 }
 
-vr::EVRInitError JoyconDriver::Activate(vr::TrackedDeviceIndex_t unObjectId) 
+vr::EVRInitError JoyconDriver::Activate(vr::TrackedDeviceIndex_t unObjectId)
 {
     m_controllerId = unObjectId;
     m_containerHandle = vr::VRProperties()->TrackedDeviceToPropertyContainer(m_controllerId);
@@ -107,36 +108,6 @@ void JoyconDriver::DebugRequest(const char *pchRequest, char *pchResponseBuffer,
         pchResponseBuffer[0] = 0;
 }
 
-static void matrixToQuat(float m[3][4], float &qw, float &qx, float &qy, float &qz)
-{
-    float tr = m[0][0] + m[1][1] + m[2][2];
-    if (tr > 0.0f) {
-        float S = sqrtf(tr + 1.0f) * 2.0f;
-        qw = 0.25f * S;
-        qx = (m[2][1] - m[1][2]) / S;
-        qy = (m[0][2] - m[2][0]) / S;
-        qz = (m[1][0] - m[0][1]) / S;
-    } else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
-        float S = sqrtf(1.0f + m[0][0] - m[1][1] - m[2][2]) * 2.0f;
-        qw = (m[2][1] - m[1][2]) / S;
-        qx = 0.25f * S;
-        qy = (m[0][1] + m[1][0]) / S;
-        qz = (m[0][2] + m[2][0]) / S;
-    } else if (m[1][1] > m[2][2]) {
-        float S = sqrtf(1.0f + m[1][1] - m[0][0] - m[2][2]) * 2.0f;
-        qw = (m[0][2] - m[2][0]) / S;
-        qx = (m[0][1] + m[1][0]) / S;
-        qy = 0.25f * S;
-        qz = (m[1][2] + m[2][1]) / S;
-    } else {
-        float S = sqrtf(1.0f + m[2][2] - m[0][0] - m[1][1]) * 2.0f;
-        qw = (m[1][0] - m[0][1]) / S;
-        qx = (m[0][2] + m[2][0]) / S;
-        qy = (m[1][2] + m[2][1]) / S;
-        qz = 0.25f * S;
-    }
-}
-
 static void quatMul(float aW, float aX, float aY, float aZ,
                      float bW, float bX, float bY, float bZ,
                      double &rW, double &rX, double &rY, double &rZ)
@@ -163,18 +134,45 @@ void JoyconDriver::processInput(JOY_SHOCK_STATE state, IMU_STATE imu, float dt)
         float qy = motion.quatY;
         float qz = motion.quatZ;
 
+        // Normalize first
         float n = sqrtf(qw * qw + qx * qx + qy * qy + qz * qz);
         if (n > 0.0f)
         {
             qw /= n; qx /= n; qy /= n; qz /= n;
         }
 
+        // FIX 1: Force into positive-w hemisphere.
+        // JSL can return q or -q for the same rotation (both are valid).
+        // Without this, qw crossing zero causes a sudden instantaneous
+        // flip of all axes — looks like the controller snapping upside-down
+        // and then "fixing itself" when qw happens to flip back.
+        if (qw < 0.0f)
+        {
+            qw = -qw;
+            qx = -qx;
+            qy = -qy;
+            qz = -qz;
+        }
+
+        // FIX 2: Per-hand axis remap.
+        // Left and right Joy-Cons are held sideways in opposite orientations
+        // so they need a mirrored remap, not the same one.
         {
             std::lock_guard<std::mutex> lock(m_quatMutex);
-            m_rawQuat.w = qw;
-            m_rawQuat.x = -qx;
-            m_rawQuat.y = qy;
-            m_rawQuat.z = -qz;
+            if (isRight)
+            {
+                m_rawQuat.w =  qw;
+                m_rawQuat.x = -qx;
+                m_rawQuat.y =  qy;
+                m_rawQuat.z = -qz;
+            }
+            else
+            {
+                m_rawQuat.w =  qw;
+                m_rawQuat.x =  qx;
+                m_rawQuat.y = -qy;
+                m_rawQuat.z =  qz;
+            }
         }
     }
 
@@ -238,16 +236,32 @@ void JoyconDriver::RunFrame()
     vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
     vr::VRServerDriverHost()->GetRawTrackedDevicePoses(0.0f, poses, vr::k_unMaxTrackedDeviceCount);
 
+    vr::TrackedDevicePose_t &hmdPose = poses[vr::k_unTrackedDeviceIndex_Hmd];
+
     if (m_pendingRecenter)
     {
         m_pendingRecenter = false;
         {
             std::lock_guard<std::mutex> lock(m_quatMutex);
+            // Conjugate of rawQuat = inverse rotation = offset to get back to identity
             m_qOffset.w =  m_rawQuat.w;
             m_qOffset.x = -m_rawQuat.x;
             m_qOffset.y = -m_rawQuat.y;
             m_qOffset.z = -m_rawQuat.z;
         }
+
+        // FIX 3: Anchor recenter position to current HMD position.
+        // Previously frozenRel was just zeroed, so any position offset was discarded
+        // rather than corrected. Now we remember where the HMD was at recenter time
+        // so the controller snaps to a predictable position relative to it.
+        if (hmdPose.bPoseIsValid && hmdPose.bDeviceIsConnected)
+        {
+            m_recenterHmdPos[0] = hmdPose.mDeviceToAbsoluteTracking.m[0][3];
+            m_recenterHmdPos[1] = hmdPose.mDeviceToAbsoluteTracking.m[1][3];
+            m_recenterHmdPos[2] = hmdPose.mDeviceToAbsoluteTracking.m[2][3];
+        }
+
+        m_frozenRel[0] = m_frozenRel[1] = m_frozenRel[2] = 0.0f;
     }
 
     {
@@ -257,7 +271,25 @@ void JoyconDriver::RunFrame()
                 m_pose.qRotation.w, m_pose.qRotation.x, m_pose.qRotation.y, m_pose.qRotation.z);
     }
 
-    vr::TrackedDevicePose_t &hmdPose = poses[vr::k_unTrackedDeviceIndex_Hmd];
+    // FIX 4: Normalize the quaternion result every frame.
+    // quatMul output drifts away from unit length over time due to floating-point
+    // error. A non-unit quaternion sent to SteamVR produces garbage rotations.
+    {
+        double qn = sqrt(
+            m_pose.qRotation.w * m_pose.qRotation.w +
+            m_pose.qRotation.x * m_pose.qRotation.x +
+            m_pose.qRotation.y * m_pose.qRotation.y +
+            m_pose.qRotation.z * m_pose.qRotation.z
+        );
+        if (qn > 0.0)
+        {
+            m_pose.qRotation.w /= qn;
+            m_pose.qRotation.x /= qn;
+            m_pose.qRotation.y /= qn;
+            m_pose.qRotation.z /= qn;
+        }
+    }
+
     if (hmdPose.bPoseIsValid && hmdPose.bDeviceIsConnected)
     {
         float hmdX = hmdPose.mDeviceToAbsoluteTracking.m[0][3];
@@ -272,10 +304,10 @@ void JoyconDriver::RunFrame()
                 + m_pose.qRotation.y * m_pose.qRotation.y
                 + m_pose.qRotation.z * m_pose.qRotation.z;
         if (n > 0.0f) { n = 1.0f / sqrtf(n); }
-        float cqw = m_pose.qRotation.w * n;
-        float cqx = m_pose.qRotation.x * n;
-        float cqy = m_pose.qRotation.y * n;
-        float cqz = m_pose.qRotation.z * n;
+        float cqw = (float)(m_pose.qRotation.w * n);
+        float cqx = (float)(m_pose.qRotation.x * n);
+        float cqy = (float)(m_pose.qRotation.y * n);
+        float cqz = (float)(m_pose.qRotation.z * n);
 
         float armWorld[3];
         float ix = cqw * armLocal[0] + cqy * armLocal[2] - cqz * armLocal[1];
@@ -302,7 +334,7 @@ void JoyconDriver::ProcessEvent(const vr::VREvent_t &vrEvent)
             vrEvent.data.hapticVibration.componentHandle == (uint64_t)m_compHaptic)
         {
             float amplitude = vrEvent.data.hapticVibration.fAmplitude;
-            float duration = vrEvent.data.hapticVibration.fDurationSeconds;
+            float duration  = vrEvent.data.hapticVibration.fDurationSeconds;
             int val = (int)(amplitude * 255.0f);
             JslSetRumble(m_jslHandle, val, val);
 
